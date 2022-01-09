@@ -1,0 +1,18 @@
+smarter_device_manager_state: present
+
+smarter_device_manager_namespace: smarter-device-manager
+
+smarter_device_manager_helm_chart:
+  chart_name: k8s-at-home/smarter-device-manager
+  repositories:
+    - name: k8s-at-home
+      repo_url: https://k8s-at-home.com/charts/
+  name: smarter-device-manager
+  state: "{{ smarter_device_manager_state }}"
+  namespace: "{{ smarter_device_manager_namespace }}"
+  values:
+    config: |
+      # - devicematch: ^bus/usb/001/005$
+      #   nummaxdevices: 1
+      - devicematch: ^rtl_sdr$
+        nummaxdevices: 1

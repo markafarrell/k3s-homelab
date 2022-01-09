@@ -1,0 +1,21 @@
+---
+ansible_private_key_file: credentials/ssh/id_ed25519
+ansible_ssh_password: raspberry
+ansible_user: pi
+
+k3s_become: true
+k3s_release_version: v1.20.9+k3s1
+
+# k3s_etcd_datastore: true
+# k3s_use_unsupported_config: true
+
+k3s_server_manifests_templates:
+  "{{ kube_vip_server_manifests_templates }}"
+
+k3s_server:
+  tls-san:
+    - 192.168.0.64
+  disable:
+    - traefik
+    - servicelb
+  # disable-cloud-controller: true

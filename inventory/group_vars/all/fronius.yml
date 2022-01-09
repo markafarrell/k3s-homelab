@@ -1,0 +1,31 @@
+---
+fronius_exporter_state: present
+
+fronius_inverter_url: http://192.168.0.243
+
+fronius_exporter_namespace: fronius
+fronius_exporter_interval: 1m
+
+fronius_exporter_scrape_config: |
+  - job_name: 'fronius-exporter'
+    scrape_interval: "{{ fronius_exporter_interval }}"
+    scrape_timeout: 1m
+    static_configs:
+      - targets: ['fronius-exporter.{{ fronius_exporter_namespace }}.svc.cluster.local:8080']
+
+fronius_helm_chart:
+  chart_name: ccremer/fronius-exporter
+  repositories:
+    - name: ccremer
+      repo_url: https://ccremer.github.io/charts
+  name: fronius-exporter
+  state: "{{ fronius_exporter_state }}"
+  namespace: "{{ fronius_exporter_namespace }}"
+  values:
+    image:
+      registry: ghcr.io
+      repository: ccremer/fronius-exporter
+      tag: v0.9.0
+      pullPolicy: IfNotPresent
+    exporter:
+      symoUrl: "{{ fronius_inverter_url }}"

@@ -1,0 +1,17 @@
+---
+grafana_state: present
+
+grafana_load_balancer_ip: 192.168.0.73
+
+grafana_helm_chart:
+  chart_name: grafana/grafana
+  repositories:
+    - name: grafana
+      repo_url: https://grafana.github.io/helm-charts
+  name: grafana
+  state: "{{ grafana_state }}"
+  namespace: monitoring
+  values:
+    service:
+      type: LoadBalancer
+      loadBalancerIP: "{{ grafana_load_balancer_ip | default('') }}"

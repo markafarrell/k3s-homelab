@@ -1,0 +1,13 @@
+---
+kube_vip:
+  vip:
+    interface: eth0
+    ip_address: 192.168.0.64
+  ccm:
+    global_range: 192.168.0.65-192.168.0.74
+
+kube_vip_server_manifests_templates:
+  - kube-vip-rbac.yaml
+  - kube-vip-daemonset.yaml
+  - kube-vip-cloud-controller.yaml
+  - kube-vip-configmap.yaml

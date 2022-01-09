@@ -1,0 +1,21 @@
+---
+rtl_433_exporter_state: present
+rtl_433_exporter_namespace: temperature-monitoring
+rtl_433_exporter_interval: 1m
+
+rtl_433_exporter_scrape_config: |
+  - job_name: 'rtl-433-exporter'
+    scrape_interval: "{{ rtl_433_exporter_interval }}"
+    scrape_timeout: 1m
+    static_configs:
+      - targets: ['rtl-433-exporter.{{ rtl_433_exporter_namespace }}.svc.cluster.local:9550']
+
+rtl_433_exporter_helm_chart:
+  chart_name: markafarrell/rtl-433-exporter
+  repositories:
+    - name: markafarrell
+      repo_url: https://markafarrell.github.io/charts/
+  name: rtl-433-exporter
+  state: "{{ rtl_433_exporter_state }}"
+  namespace: "{{ rtl_433_exporter_namespace }}"
+  values: {}

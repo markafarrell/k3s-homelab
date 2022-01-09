@@ -1,0 +1,27 @@
+---
+speedtest_exporter_state: present
+
+speedtest_exporter_speedtest_server: 18714 # Telstra Windsor Australia 110.145.177.190
+speedtest_exporter_interval: 2m # Run the test every 2 minutes
+speedtest_exporter_namespace: speedtest-exporter
+
+speedtest_exporter_scrape_config: |
+  - job_name: 'speedtest-exporter'
+    scrape_interval: "{{ speedtest_exporter_interval }}"
+    scrape_timeout: 1m
+    static_configs:
+      - targets: ['speedtest-exporter.{{ speedtest_exporter_namespace }}.svc.cluster.local:9798']
+
+speedtest_exporter_helm_chart:
+  chart_name: k8s-at-home/speedtest-exporter
+  repositories:
+    - name: k8s-at-home
+      repo_url: https://k8s-at-home.com/charts/
+  name: speedtest-exporter
+  state: "{{ speedtest_exporter_state }}"
+  namespace: "{{ speedtest_exporter_namespace }}"
+  values:
+    env:
+      SPEEDTEST_SERVER: "{{ speedtest_exporter_speedtest_server | default(omit) }}"
+    image:
+      tag: v3.3.2

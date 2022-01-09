@@ -1,0 +1,17 @@
+---
+- name: Add chart repo
+  community.kubernetes.helm_repository:
+    name: "{{ item.name }}"
+    repo_url: "{{ item.repo_url }}"
+  loop: "{{ helm_chart.repositories }}"
+
+- name: "Install chart - {{ helm_chart.name }}"
+  community.kubernetes.helm:
+    name: "{{ helm_chart.name }}"
+    chart_ref: "{{ helm_chart.chart_name }}"
+    release_namespace: "{{ helm_chart.namespace }}"
+    create_namespace: true
+    update_repo_cache: true
+    kubeconfig: "{{ kubeconfig_path | default(omit) }}"
+    state: "{{ helm_chart.state | default('present') }}"
+    values: "{{ helm_chart['values'] | default(omit) }}"

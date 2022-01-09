@@ -1,0 +1,60 @@
+---
+prometheus_state: present
+
+prometheus_retention: 1d
+
+prometheus_remote_write:
+  - url: https://prometheus-blocks-prod-us-central1.grafana.net/api/prom/push
+    basic_auth:
+      username: !vault |
+          $ANSIBLE_VAULT;1.2;AES256;vault
+          39383863613162626533616535613662313466343362313338616436373333303262383630333230
+          6432666130313937373730363534613838383364633239620a343161396230396433373366643132
+          39376465643235316233313965623966343536323231336635333664623466343733353162336263
+          3830376236393763330a613731396566353961366533613866363337616630623535623839303961
+          6338
+      password: !vault |
+          $ANSIBLE_VAULT;1.2;AES256;vault
+          39643733626234373134623339306235353038313531666363653335316238653364343136663338
+          6235663933366462336565616239356431633665336333630a323166373332323334303437356566
+          66643762383065396661623233393463366237626333353237313737636539336230323037653963
+          6534343863373161630a306338393265366139623561623966393762396538386565316530346531
+          31616433396632303965386365633834663930626663313830343038653930656563363430353866
+          65336634353564663230366231346437393964336437663239383338653939613935643066393636
+          34336263613964626430636663613130656435343665343961653131666462303939653934313638
+          35333638313631363330326562613666326431663739323730643566653535646663353766643361
+          61633434353363343461626566653039323733383439396231646564643533386332303562386638
+          3666336665336637633638356665306534386233336436373936
+    write_relabel_configs:
+      - source_labels: [__name__]
+        regex: "(node_.*)|\
+          (speedtest_.*)|\
+          (rtl_433_.*)|\
+          (fronius_.*)"
+        action: "keep"
+
+prometheus_extra_scrape_configs:
+  "{{ speedtest_exporter_scrape_config +
+      fronius_exporter_scrape_config +
+      rtl_433_exporter_scrape_config
+  }}"
+
+# prometheus_load_balancer_ip: 192.168.0.66
+
+prometheus_helm_chart:
+  chart_name: prometheus-community/prometheus
+  repositories:
+    - name: prometheus-community
+      repo_url: https://prometheus-community.github.io/helm-charts
+    - name: kube-state-metrics
+      repo_url: https://kubernetes.github.io/kube-state-metrics
+  name: prometheus
+  state: "{{ prometheus_state }}"
+  namespace: monitoring
+  values:
+    server:
+      remoteWrite: "{{ prometheus_remote_write | default([]) }}"
+      retention: "{{ prometheus_retention | default('') }}"
+    alertmanager:
+      enabled: false
+    extraScrapeConfigs: "{{ prometheus_extra_scrape_configs | default(omit) }}"

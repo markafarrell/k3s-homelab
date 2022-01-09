@@ -1,0 +1,11 @@
+---
+kubeconfig_path: "credentials/kube/config"
+
+helm_charts:
+  - "{{ prometheus_helm_chart }}"
+  - "{{ promtail_helm_chart }}"
+  - "{{ speedtest_exporter_helm_chart }}"
+  - "{{ fronius_helm_chart }}"
+  # - "{{ grafana_helm_chart }}"
+  - "{{ smarter_device_manager_helm_chart }}"
+  - "{{ rtl_433_exporter_helm_chart }}"

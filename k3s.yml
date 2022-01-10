@@ -1,117 +1,117 @@
-# ---
-# - hosts: all
-#   tasks:
-#     - name: Add authorized keys to user
-#       ansible.posix.authorized_key:
-#         user: "{{ ansible_user }}"
-#         state: present
-#         key: "{{ lookup('file', 'credentials/ssh/id_ed25519.pub') }}"
+---
+- hosts: all
+  tasks:
+    - name: Add authorized keys to user
+      ansible.posix.authorized_key:
+        user: "{{ ansible_user }}"
+        state: present
+        key: "{{ lookup('file', 'credentials/ssh/id_ed25519.pub') }}"
 
-#     - name: Reset connection
-#       meta: reset_connection
+    - name: Reset connection
+      meta: reset_connection
 
-#     - name: Disable password based login
-#       ansible.builtin.user:
-#         name: pi
-#         password: "!"
-#       become: true
+    - name: Disable password based login
+      ansible.builtin.user:
+        name: pi
+        password: "!"
+      become: true
 
-# - hosts: all
-#   tasks:
-#     - name: Activating cgroup support
-#       lineinfile:
-#         path: /boot/cmdline.txt
-#         regexp: '^((?!.*\bcgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory\b).*)$'
-#         line: '\1 cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory'
-#         backrefs: true
-#       notify: reboot
-#       become: true
+- hosts: all
+  tasks:
+    - name: Activating cgroup support
+      lineinfile:
+        path: /boot/cmdline.txt
+        regexp: '^((?!.*\bcgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory\b).*)$'
+        line: '\1 cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory'
+        backrefs: true
+      notify: reboot
+      become: true
 
-#   handlers:
-#     - name: reboot
-#       reboot:
-#       become: true
+  handlers:
+    - name: reboot
+      reboot:
+      become: true
 
-# - hosts: all
-#   tasks:
-#     - name: Install iptables
-#       package:
-#         name:
-#           - iptables
-#       become: true
+- hosts: all
+  tasks:
+    - name: Install iptables
+      package:
+        name:
+          - iptables
+      become: true
 
-#     - name: Create symlinks for iptables-legacy in PATH
-#       file:
-#         src: /usr/sbin/iptables-legacy
-#         dest: /usr/bin/iptables-legacy
-#         owner: root
-#         group: root
-#         state: link
-#       become: true
+    - name: Create symlinks for iptables-legacy in PATH
+      file:
+        src: /usr/sbin/iptables-legacy
+        dest: /usr/bin/iptables-legacy
+        owner: root
+        group: root
+        state: link
+      become: true
 
-#     - name: Flush iptables before changing to iptables-legacy
-#       iptables:
-#         flush: true
-#       changed_when: false   # iptables flush always returns changed
-#       become: true
+    - name: Flush iptables before changing to iptables-legacy
+      iptables:
+        flush: true
+      changed_when: false   # iptables flush always returns changed
+      become: true
 
-#     - name: Changing to iptables-legacy
-#       alternatives:
-#         path: /usr/sbin/iptables-legacy
-#         name: iptables
-#       register: ip4_legacy
-#       become: true
+    - name: Changing to iptables-legacy
+      alternatives:
+        path: /usr/sbin/iptables-legacy
+        name: iptables
+      register: ip4_legacy
+      become: true
 
-#     - name: Changing to ip6tables-legacy
-#       alternatives:
-#         path: /usr/sbin/ip6tables-legacy
-#         name: ip6tables
-#       register: ip6_legacy
-#       become: true
+    - name: Changing to ip6tables-legacy
+      alternatives:
+        path: /usr/sbin/ip6tables-legacy
+        name: ip6tables
+      register: ip6_legacy
+      become: true
 
-# - hosts: all
-#   roles:
-#     - role: xanmanning.k3s
-#       # vars:
-#       #   k3s_state: uninstalled
+- hosts: all
+  roles:
+    - role: xanmanning.k3s
+      # vars:
+      #   k3s_state: uninstalled
 
-# - hosts: masters
-#   gather_facts: false
-#   tasks:
-#     - name: Replace 127.0.0.1 with control plane vip
-#       ansible.builtin.replace:
-#         path: /etc/rancher/k3s/k3s.yaml
-#         regexp: "server: https://[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+:6443"
-#         replace: "server: https://{{ kube_vip.vip.ip_address }}:6443"
-#       become: true
+- hosts: masters
+  gather_facts: false
+  tasks:
+    - name: Replace 127.0.0.1 with control plane vip
+      ansible.builtin.replace:
+        path: /etc/rancher/k3s/k3s.yaml
+        regexp: "server: https://[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+:6443"
+        replace: "server: https://{{ kube_vip.vip.ip_address }}:6443"
+      become: true
 
-#     - name: Fetch .kube/config
-#       ansible.builtin.fetch:
-#         src:  /etc/rancher/k3s/k3s.yaml
-#         dest: credentials/kube/config
-#         flat: yes
-#       become: true
-#       run_once: true
+    - name: Fetch .kube/config
+      ansible.builtin.fetch:
+        src:  /etc/rancher/k3s/k3s.yaml
+        dest: credentials/kube/config
+        flat: yes
+      become: true
+      run_once: true
 
-# - hosts: all
-#   tasks:
-#     - name: Install rtl-sdr
-#       package:
-#         name:
-#           - rtl-sdr
-#       become: true
+- hosts: all
+  tasks:
+    - name: Install rtl-sdr
+      package:
+        name:
+          - rtl-sdr
+      become: true
 
-#     - name: Install rtl-sdr udev rules
-#       template:
-#         src: rtl-sdr.rules
-#         dest: /etc/udev/rules.d/rtl-sdr.rules
-#       notify: reload-udev-rules
-#       become: true
+    - name: Install rtl-sdr udev rules
+      template:
+        src: rtl-sdr.rules
+        dest: /etc/udev/rules.d/rtl-sdr.rules
+      notify: reload-udev-rules
+      become: true
 
-#   handlers:
-#     - name: reload-udev-rules
-#       shell: udevadm control --reload-rules && udevadm trigger
-#       become: true
+  handlers:
+    - name: reload-udev-rules
+      shell: udevadm control --reload-rules && udevadm trigger
+      become: true
 
 - hosts: localhost
   connection: local
@@ -122,18 +122,3 @@
       loop_control:
         loop_var: helm_chart
         label: "{{ helm_chart.chart_name }}"
-
-# - hosts: localhost
-#   connection: local
-#   tasks:
-#     - name: Install rtl-433-exporter
-#       kubernetes.core.k8s:
-#         state: present
-#         src: files/rtl-433-exporter-deployment.yml
-#         kubeconfig: "{{ kubeconfig_path | default(omit) }}"
-
-#     - name: Install rtl-433-service
-#       kubernetes.core.k8s:
-#         state: present
-#         src: files/rtl-433-exporter-service.yml
-#         kubeconfig: "{{ kubeconfig_path | default(omit) }}"

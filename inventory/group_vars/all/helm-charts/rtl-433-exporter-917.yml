@@ -1,0 +1,26 @@
+---
+rtl_433_exporter_917_state: present
+rtl_433_exporter_917_namespace: temperature-monitoring
+rtl_433_exporter_917_interval: 1m
+
+rtl_433_exporter_917_scrape_config: |
+  - job_name: 'rtl-433-exporter-917'
+    scrape_interval: "{{ rtl_433_exporter_917_interval }}"
+    scrape_timeout: 1m
+    static_configs:
+      - targets: ['rtl-433-exporter-917.{{ rtl_433_exporter_917_namespace }}.svc.cluster.local:9550']
+
+rtl_433_exporter_917_helm_chart:
+  chart_name: markafarrell/rtl-433-exporter
+  repositories:
+    - name: markafarrell
+      repo_url: https://markafarrell.github.io/helm-charts/
+  name: rtl-433-exporter-917
+  state: "{{ rtl_433_exporter_917_state }}"
+  namespace: "{{ rtl_433_exporter_917_namespace }}"
+  values:
+    image:
+      tag: 1.2.3
+    env:
+      FREQUENCY: 917M
+      MATCHERS: --id_matcher=Holman-WS5029,7953,WeatherStation

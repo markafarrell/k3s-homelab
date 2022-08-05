@@ -1,0 +1,10 @@
+---
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: Install helm charts
+      include_tasks: tasks/helm-install.yml
+      loop: "{{ helm_charts }}"
+      loop_control:
+        loop_var: helm_chart
+        label: "{{ helm_chart.chart_name }}"

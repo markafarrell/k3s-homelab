@@ -1,5 +1,5 @@
 ---
-promtail_state: present
+promtail_state: absent
 
 loki_username: !vault |
           $ANSIBLE_VAULT;1.2;AES256;vault

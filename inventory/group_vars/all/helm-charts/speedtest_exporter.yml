@@ -1,5 +1,5 @@
 ---
-speedtest_exporter_state: present
+speedtest_exporter_state: absent
 
 speedtest_exporter_speedtest_server: 18714 # Telstra Windsor Australia 110.145.177.190
 speedtest_exporter_interval: 2m # Run the test every 2 minutes

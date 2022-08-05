@@ -1,0 +1,844 @@
+---
+grafana_state: present
+
+grafana_load_balancer_ip: 192.168.0.97
+
+grafana_admin_user: !vault |
+          $ANSIBLE_VAULT;1.2;AES256;vault
+          61353133633439386132326434373665363236646231366230643732313830616233336531633637
+          6462363534346536626639386631616532306161646532620a346635323738643831346130663237
+          36336265316535393237663630366432393239653134396536633537666538353435623236363938
+          6338393438363334310a326632616163366537333265666135373130333131323839356665356236
+          3739
+
+grafana_admin_password: !vault |
+          $ANSIBLE_VAULT;1.2;AES256;vault
+          36366535623466353835376137316363303230373530633036333562303863663965363763393962
+          3033633865343430383165666633613466343263653761640a303335313730653163373566313666
+          32326164656234393535316636666430666464393030313461626131636130643435396434643165
+          6165633164346431380a376531386663363163346337326330643764333133626238616164656635
+          39303237363339626139383965646639343732393162616236623565363061386264
+
+grafana_helm_chart:
+  chart_name: grafana/grafana
+  version: 6.32.9
+  repositories:
+    - name: grafana
+      repo_url: https://grafana.github.io/helm-charts
+  secrets:
+    - name: grafana-admin-credentials
+      content:
+        admin-user: "{{ grafana_admin_user | b64encode }}"
+        admin-password: "{{ grafana_admin_password | b64encode }}"
+  name: grafana
+  state: "{{ grafana_state }}"
+  namespace: monitoring
+  values:
+    service:
+      type: LoadBalancer
+      loadBalancerIP: "{{ grafana_load_balancer_ip | default('') }}"
+    admin:
+      existingSecret: grafana-admin-credentials
+    ingress:
+      enabled: true
+      hosts:
+        - grafana.homelab.evilcyborgdrone.com
+      annotations:
+        kubernetes.io/ingress.class: "nginx"
+        cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      tls:
+        - hosts:
+          - grafana.homelab.evilcyborgdrone.com
+          secretName: grafana-tls
+
+    datasources:
+      datasources.yaml:
+        apiVersion: 1
+        datasources:
+          - name: Prometheus
+            type: prometheus
+            url: http://prometheus-server
+            isDefault: false
+            uid: prometheus
+            editable: false
+          - name: Thanos
+            type: prometheus
+            url: http://thanos-query:9090
+            isDefault: true
+            uid: thanos
+            editable: false
+    dashboardProviders:
+      dashboardproviders.yaml:
+        apiVersion: 1
+        providers:
+          - name: 'default'
+            orgId: 1
+            folder: ''
+            type: file
+            disableDeletion: true
+            editable: false
+            options:
+              path: /var/lib/grafana/dashboards/default
+    dashboards:
+      default:
+        home:
+          json: |
+            {% raw %}
+            {
+              "annotations": {
+                "list": [
+                  {
+                    "builtIn": 1,
+                    "datasource": {
+                      "type": "grafana",
+                      "uid": "-- Grafana --"
+                    },
+                    "enable": true,
+                    "hide": true,
+                    "iconColor": "rgba(0, 211, 255, 1)",
+                    "name": "Annotations & Alerts",
+                    "target": {
+                      "limit": 100,
+                      "matchAny": false,
+                      "tags": [],
+                      "type": "dashboard"
+                    },
+                    "type": "dashboard"
+                  }
+                ]
+              },
+              "editable": true,
+              "fiscalYearStartMonth": 0,
+              "graphTooltip": 0,
+              "id": 2,
+              "links": [],
+              "liveNow": false,
+              "panels": [
+                {
+                  "datasource": {
+                    "type": "prometheus",
+                    "uid": "thanos"
+                  },
+                  "fieldConfig": {
+                    "defaults": {
+                      "color": {
+                        "mode": "palette-classic"
+                      },
+                      "custom": {
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 21,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                          "legend": false,
+                          "tooltip": false,
+                          "viz": false
+                        },
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                          "type": "linear"
+                        },
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                          "group": "A",
+                          "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                          "mode": "off"
+                        }
+                      },
+                      "mappings": [],
+                      "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                          {
+                            "color": "green",
+                            "value": null
+                          },
+                          {
+                            "color": "red",
+                            "value": 80
+                          }
+                        ]
+                      },
+                      "unit": "watt"
+                    },
+                    "overrides": []
+                  },
+                  "gridPos": {
+                    "h": 10,
+                    "w": 24,
+                    "x": 0,
+                    "y": 0
+                  },
+                  "id": 2,
+                  "options": {
+                    "legend": {
+                      "calcs": [
+                        "lastNotNull",
+                        "mean"
+                      ],
+                      "displayMode": "table",
+                      "placement": "bottom"
+                    },
+                    "tooltip": {
+                      "mode": "single",
+                      "sort": "none"
+                    }
+                  },
+                  "targets": [
+                    {
+                      "datasource": {
+                        "type": "prometheus",
+                        "uid": "grafanacloud-prom"
+                      },
+                      "exemplar": true,
+                      "expr": "fronius_site_power_grid",
+                      "hide": false,
+                      "interval": "",
+                      "legendFormat": "Grid Usage",
+                      "refId": "B"
+                    },
+                    {
+                      "datasource": {
+                        "type": "prometheus",
+                        "uid": "grafanacloud-prom"
+                      },
+                      "exemplar": true,
+                      "expr": "-fronius_site_power_load",
+                      "hide": false,
+                      "interval": "",
+                      "legendFormat": "House Usage",
+                      "refId": "C"
+                    },
+                    {
+                      "datasource": {
+                        "type": "prometheus",
+                        "uid": "grafanacloud-prom"
+                      },
+                      "exemplar": true,
+                      "expr": "fronius_site_power_photovoltaic",
+                      "hide": false,
+                      "interval": "",
+                      "legendFormat": "Solar Generation",
+                      "refId": "D"
+                    }
+                  ],
+                  "title": "Solar",
+                  "type": "timeseries"
+                },
+                {
+                  "datasource": {
+                    "type": "prometheus",
+                    "uid": "thanos"
+                  },
+                  "description": "",
+                  "fieldConfig": {
+                    "defaults": {
+                      "color": {
+                        "mode": "palette-classic"
+                      },
+                      "custom": {
+                        "axisLabel": "",
+                        "axisPlacement": "left",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                          "legend": false,
+                          "tooltip": false,
+                          "viz": false
+                        },
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                          "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                          "group": "A",
+                          "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                          "mode": "off"
+                        }
+                      },
+                      "mappings": [],
+                      "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                          {
+                            "color": "green",
+                            "value": null
+                          },
+                          {
+                            "color": "red",
+                            "value": 80
+                          }
+                        ]
+                      },
+                      "unit": "celsius"
+                    },
+                    "overrides": [
+                      {
+                        "matcher": {
+                          "id": "byName",
+                          "options": "Master Bedroom"
+                        },
+                        "properties": [
+                          {
+                            "id": "color",
+                            "value": {
+                              "fixedColor": "#73BF69",
+                              "mode": "fixed"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "gridPos": {
+                    "h": 11,
+                    "w": 24,
+                    "x": 0,
+                    "y": 10
+                  },
+                  "id": 4,
+                  "options": {
+                    "legend": {
+                      "calcs": [
+                        "min",
+                        "max",
+                        "lastNotNull"
+                      ],
+                      "displayMode": "table",
+                      "placement": "bottom"
+                    },
+                    "tooltip": {
+                      "mode": "single",
+                      "sort": "none"
+                    }
+                  },
+                  "targets": [
+                    {
+                      "datasource": {
+                        "type": "prometheus",
+                        "uid": "grafanacloud-prom"
+                      },
+                      "editorMode": "code",
+                      "exemplar": true,
+                      "expr": "rtl_433_temperature_celsius{location!=\"\"}",
+                      "interval": "",
+                      "legendFormat": "{{ location }}",
+                      "range": true,
+                      "refId": "A"
+                    }
+                  ],
+                  "title": "Temperature",
+                  "type": "timeseries"
+                },
+                {
+                  "datasource": {
+                    "type": "prometheus",
+                    "uid": "thanos"
+                  },
+                  "description": "",
+                  "fieldConfig": {
+                    "defaults": {
+                      "color": {
+                        "mode": "palette-classic"
+                      },
+                      "custom": {
+                        "axisLabel": "",
+                        "axisPlacement": "left",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                          "legend": false,
+                          "tooltip": false,
+                          "viz": false
+                        },
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                          "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                          "group": "A",
+                          "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                          "mode": "off"
+                        }
+                      },
+                      "mappings": [],
+                      "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                          {
+                            "color": "green",
+                            "value": null
+                          },
+                          {
+                            "color": "red",
+                            "value": 80
+                          }
+                        ]
+                      },
+                      "unit": "lengthmm"
+                    },
+                    "overrides": []
+                  },
+                  "gridPos": {
+                    "h": 10,
+                    "w": 24,
+                    "x": 0,
+                    "y": 21
+                  },
+                  "id": 11,
+                  "options": {
+                    "legend": {
+                      "calcs": [],
+                      "displayMode": "list",
+                      "placement": "bottom"
+                    },
+                    "tooltip": {
+                      "mode": "single",
+                      "sort": "none"
+                    }
+                  },
+                  "targets": [
+                    {
+                      "datasource": {
+                        "type": "prometheus",
+                        "uid": "grafanacloud-prom"
+                      },
+                      "exemplar": true,
+                      "expr": "rate(rtl_433_rain_mm{location=\"WeatherStation\"}[1d])*60*60*24",
+                      "interval": "",
+                      "legendFormat": "Rain (per day)",
+                      "refId": "A"
+                    },
+                    {
+                      "datasource": {
+                        "type": "prometheus",
+                        "uid": "grafanacloud-prom"
+                      },
+                      "exemplar": true,
+                      "expr": "rate(rtl_433_rain_mm{location=\"WeatherStation\"}[1h])*60*60",
+                      "hide": false,
+                      "interval": "",
+                      "legendFormat": "Rain (per hour)",
+                      "refId": "B"
+                    }
+                  ],
+                  "title": "Rain",
+                  "type": "timeseries"
+                },
+                {
+                  "datasource": {
+                    "type": "prometheus",
+                    "uid": "thanos"
+                  },
+                  "fieldConfig": {
+                    "defaults": {
+                      "color": {
+                        "mode": "palette-classic"
+                      },
+                      "custom": {
+                        "axisLabel": "",
+                        "axisPlacement": "right",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                          "legend": false,
+                          "tooltip": false,
+                          "viz": false
+                        },
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                          "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                          "group": "A",
+                          "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                          "mode": "off"
+                        }
+                      },
+                      "mappings": [],
+                      "min": 0,
+                      "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                          {
+                            "color": "green",
+                            "value": null
+                          },
+                          {
+                            "color": "red",
+                            "value": 80
+                          }
+                        ]
+                      },
+                      "unit": "velocitykmh"
+                    },
+                    "overrides": [
+                      {
+                        "matcher": {
+                          "id": "byName",
+                          "options": "Wind Direction"
+                        },
+                        "properties": [
+                          {
+                            "id": "custom.axisPlacement",
+                            "value": "left"
+                          },
+                          {
+                            "id": "unit",
+                            "value": "degree"
+                          },
+                          {
+                            "id": "max",
+                            "value": 360
+                          }
+                        ]
+                      },
+                      {
+                        "__systemRef": "hideSeriesFrom",
+                        "matcher": {
+                          "id": "byNames",
+                          "options": {
+                            "mode": "exclude",
+                            "names": [
+                              "Wind Speed"
+                            ],
+                            "prefix": "All except:",
+                            "readOnly": true
+                          }
+                        },
+                        "properties": [
+                          {
+                            "id": "custom.hideFrom",
+                            "value": {
+                              "legend": false,
+                              "tooltip": false,
+                              "viz": true
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "gridPos": {
+                    "h": 11,
+                    "w": 24,
+                    "x": 0,
+                    "y": 31
+                  },
+                  "id": 9,
+                  "options": {
+                    "legend": {
+                      "calcs": [],
+                      "displayMode": "list",
+                      "placement": "bottom"
+                    },
+                    "tooltip": {
+                      "mode": "single",
+                      "sort": "none"
+                    }
+                  },
+                  "targets": [
+                    {
+                      "datasource": {
+                        "type": "prometheus",
+                        "uid": "grafanacloud-prom"
+                      },
+                      "exemplar": true,
+                      "expr": "rtl_433_wind_avg_km_h{location=\"WeatherStation\"}",
+                      "interval": "",
+                      "legendFormat": "Wind Speed",
+                      "refId": "A"
+                    },
+                    {
+                      "datasource": {
+                        "type": "prometheus",
+                        "uid": "grafanacloud-prom"
+                      },
+                      "exemplar": true,
+                      "expr": "rtl_433_wind_dir_deg{location=\"WeatherStation\"}",
+                      "hide": false,
+                      "interval": "",
+                      "legendFormat": "Wind Direction",
+                      "refId": "B"
+                    }
+                  ],
+                  "title": "Wind",
+                  "type": "timeseries"
+                },
+                {
+                  "datasource": {
+                    "type": "prometheus",
+                    "uid": "thanos"
+                  },
+                  "description": "",
+                  "fieldConfig": {
+                    "defaults": {
+                      "color": {
+                        "mode": "palette-classic"
+                      },
+                      "custom": {
+                        "axisLabel": "",
+                        "axisPlacement": "left",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                          "legend": false,
+                          "tooltip": false,
+                          "viz": false
+                        },
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                          "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                          "group": "A",
+                          "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                          "mode": "off"
+                        }
+                      },
+                      "mappings": [],
+                      "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                          {
+                            "color": "green",
+                            "value": null
+                          },
+                          {
+                            "color": "red",
+                            "value": 80
+                          }
+                        ]
+                      },
+                      "unit": "humidity"
+                    },
+                    "overrides": [
+                      {
+                        "matcher": {
+                          "id": "byName",
+                          "options": "Master Bedroom"
+                        },
+                        "properties": [
+                          {
+                            "id": "color",
+                            "value": {
+                              "fixedColor": "#73BF69",
+                              "mode": "fixed"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "gridPos": {
+                    "h": 11,
+                    "w": 24,
+                    "x": 0,
+                    "y": 42
+                  },
+                  "id": 7,
+                  "options": {
+                    "legend": {
+                      "calcs": [
+                        "min",
+                        "max",
+                        "lastNotNull"
+                      ],
+                      "displayMode": "table",
+                      "placement": "bottom"
+                    },
+                    "tooltip": {
+                      "mode": "single",
+                      "sort": "none"
+                    }
+                  },
+                  "targets": [
+                    {
+                      "datasource": {
+                        "type": "prometheus",
+                        "uid": "grafanacloud-prom"
+                      },
+                      "editorMode": "code",
+                      "exemplar": true,
+                      "expr": "rtl_433_humidity{location!=\"\"}*100",
+                      "interval": "",
+                      "legendFormat": "{{ location }}",
+                      "range": true,
+                      "refId": "A"
+                    }
+                  ],
+                  "title": "Humidity",
+                  "type": "timeseries"
+                },
+                {
+                  "datasource": {
+                    "type": "prometheus",
+                    "uid": "thanos"
+                  },
+                  "description": "",
+                  "fieldConfig": {
+                    "defaults": {
+                      "color": {
+                        "mode": "palette-classic"
+                      },
+                      "custom": {
+                        "axisLabel": "",
+                        "axisPlacement": "left",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                          "legend": false,
+                          "tooltip": false,
+                          "viz": false
+                        },
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                          "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                          "group": "A",
+                          "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                          "mode": "off"
+                        }
+                      },
+                      "mappings": [],
+                      "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                          {
+                            "color": "green",
+                            "value": null
+                          },
+                          {
+                            "color": "red",
+                            "value": 80
+                          }
+                        ]
+                      },
+                      "unit": "none"
+                    },
+                    "overrides": [
+                      {
+                        "matcher": {
+                          "id": "byName",
+                          "options": "Master Bedroom"
+                        },
+                        "properties": [
+                          {
+                            "id": "color",
+                            "value": {
+                              "fixedColor": "#73BF69",
+                              "mode": "fixed"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "gridPos": {
+                    "h": 11,
+                    "w": 24,
+                    "x": 0,
+                    "y": 53
+                  },
+                  "id": 5,
+                  "options": {
+                    "legend": {
+                      "calcs": [
+                        "min",
+                        "max",
+                        "lastNotNull"
+                      ],
+                      "displayMode": "table",
+                      "placement": "bottom"
+                    },
+                    "tooltip": {
+                      "mode": "single",
+                      "sort": "none"
+                    }
+                  },
+                  "targets": [
+                    {
+                      "datasource": {
+                        "type": "prometheus",
+                        "uid": "grafanacloud-prom"
+                      },
+                      "editorMode": "code",
+                      "exemplar": true,
+                      "expr": "rtl_433_battery{location!=\"\"}",
+                      "interval": "",
+                      "legendFormat": "{{ location }}",
+                      "range": true,
+                      "refId": "A"
+                    }
+                  ],
+                  "title": "Temperature Sensor Battery Status",
+                  "type": "timeseries"
+                }
+              ],
+              "refresh": "1m",
+              "schemaVersion": 36,
+              "style": "dark",
+              "tags": [],
+              "templating": {
+                "list": []
+              },
+              "time": {
+                "from": "now-24h",
+                "to": "now"
+              },
+              "timepicker": {},
+              "timezone": "",
+              "title": "Home",
+              "uid": "Imdtc8kVk",
+              "version": 2,
+              "weekStart": ""
+            }
+            {% endraw %}

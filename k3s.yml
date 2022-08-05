@@ -95,10 +95,25 @@
 
 - hosts: all
   tasks:
+    - name: Blacklist rtl kernel modules
+      lineinfile:
+        path: /etc/modprobe.d/blacklist.conf
+        line: 'blacklist dvb_usb_rtl28xxu'
+        regexp: '^blacklist dvb_usb_rtl28xxu'
+      become: true
+      notify: reboot
+  handlers:
+    - name: reboot
+      reboot:
+      become: true
+
+- hosts: all
+  tasks:
     - name: Install rtl-sdr
       package:
         name:
           - rtl-sdr
+          - rtl-433
       become: true
 
     - name: Install rtl-sdr udev rules
@@ -113,12 +128,4 @@
       shell: udevadm control --reload-rules && udevadm trigger
       become: true
 
-- hosts: localhost
-  connection: local
-  tasks:
-    - name: Install helm charts
-      include_tasks: tasks/helm-install.yml
-      loop: "{{ helm_charts }}"
-      loop_control:
-        loop_var: helm_chart
-        label: "{{ helm_chart.chart_name }}"
+- import_playbook: helm.yml

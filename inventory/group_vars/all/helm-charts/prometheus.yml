@@ -1,0 +1,201 @@
+---
+prometheus_state: present
+
+prometheus_retention: 4h
+
+prometheus_remote_write:
+  - url: https://prometheus-blocks-prod-us-central1.grafana.net/api/prom/push
+    basic_auth:
+      username: !vault |
+          $ANSIBLE_VAULT;1.2;AES256;vault
+          39383863613162626533616535613662313466343362313338616436373333303262383630333230
+          6432666130313937373730363534613838383364633239620a343161396230396433373366643132
+          39376465643235316233313965623966343536323231336635333664623466343733353162336263
+          3830376236393763330a613731396566353961366533613866363337616630623535623839303961
+          6338
+      password: !vault |
+          $ANSIBLE_VAULT;1.2;AES256;vault
+          39643733626234373134623339306235353038313531666363653335316238653364343136663338
+          6235663933366462336565616239356431633665336333630a323166373332323334303437356566
+          66643762383065396661623233393463366237626333353237313737636539336230323037653963
+          6534343863373161630a306338393265366139623561623966393762396538386565316530346531
+          31616433396632303965386365633834663930626663313830343038653930656563363430353866
+          65336634353564663230366231346437393964336437663239383338653939613935643066393636
+          34336263613964626430636663613130656435343665343961653131666462303939653934313638
+          35333638313631363330326562613666326431663739323730643566653535646663353766643361
+          61633434353363343461626566653039323733383439396231646564643533386332303562386638
+          3666336665336637633638356665306534386233336436373936
+    write_relabel_configs:
+      - source_labels: [__name__]
+        regex: "(node_.*)|\
+          (speedtest_.*)|\
+          (rtl_433_.*)|\
+          (fronius_.*)"
+        action: "keep"
+
+prometheus_extra_scrape_configs:
+  "{{ speedtest_exporter_scrape_config +
+      fronius_exporter_scrape_config +
+      rtl_433_exporter_scrape_config +
+      rtl_433_exporter_917_scrape_config
+  }}"
+
+prometheus_load_balancer_ip: 192.168.0.66
+
+prometheus_thanos_s3_access_key: !vault |
+          $ANSIBLE_VAULT;1.2;AES256;vault
+          61313965336133656461313163613135326461306363663631393137353662366461646531306231
+          3835383864373163323136633734326564303533653862610a653966353038636165656338653333
+          66623534656332383863306230333864306363666436376235666436373032373538353263653838
+          6464653335306264660a303666393862346564396331613730336639643533376138363930336633
+          37633636333038336265323461653733313761363935623438396266373165353031
+
+prometheus_thanos_s3_secret_key: !vault |
+          $ANSIBLE_VAULT;1.2;AES256;vault
+          65656139376561313365383233653532333963306130653630363131613666346633333831376539
+          6134363038383231616534396230323035633235363039620a666463623962636637353863616636
+          38633639616134313165373539663736646131306535303732353564306136313731346661323632
+          6133326439643265620a303535313761343937633532363238333830656534366330383764346539
+          62393165346633666366356131653364363230623534346163643562643731333339653866383338
+          3162653438646333383837633963316235303836316231623864
+
+prometheus_thanos_s3_config:
+  type: s3
+  config:
+    bucket: homelab-thanos-data #S3 bucket name
+    endpoint: s3.ap-southeast-2.amazonaws.com #S3 Regional endpoint
+    access_key: "{{ prometheus_thanos_s3_access_key }}"
+    secret_key: "{{ prometheus_thanos_s3_secret_key }}"
+
+prometheus_helm_chart:
+  chart_name: prometheus-community/prometheus
+  version: 15.5.0
+  repositories:
+    - name: prometheus-community
+      repo_url: https://prometheus-community.github.io/helm-charts
+    - name: kube-state-metrics
+      repo_url: https://kubernetes.github.io/kube-state-metrics
+  secrets:
+    - name: thanos-storage-secret
+      content:
+        s3.yml: "{{ prometheus_thanos_s3_config | to_nice_yaml | b64encode }}"
+  name: prometheus
+  state: "{{ prometheus_state }}"
+  namespace: monitoring
+  values:
+    # My additions
+    alertmanager:
+      enabled: false
+    nodeExporter:
+      enabled: false
+    serverFiles:
+      prometheus.yml:
+        scrape_configs: "{{ prometheus_extra_scrape_configs | from_yaml }}"
+    server:
+      remoteWrite: "{{ prometheus_remote_write | default([]) }}"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: node-role.kubernetes.io/master
+                  operator: DoesNotExist
+
+      # From https://github.com/thanos-io/thanos/tree/main/tutorials/kubernetes-helm
+      # with some modifications
+      extraArgs:
+        # log.level: debug
+        storage.tsdb.min-block-duration: 2h  # Don't change this, see docs/components/sidecar.md
+        storage.tsdb.max-block-duration: 2h  # Don't change this, see docs/components/sidecar.md
+      retention: 4h
+      service:
+        annotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "9090"
+        gRPC:
+          enabled: true
+      statefulSet:
+        enabled: true
+      podAnnotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "10902"
+      sidecarContainers:
+      - name: thanos-sidecar
+        # Always use explicit image tags (release or main-<date>-sha) instead of ambigous `latest` or `main`.
+        # Check https://quay.io/repository/thanos/thanos?tab=tags to get latest tag.
+        image: quay.io/thanos/thanos:main-2022-06-27-37cc176c
+        args:
+        - "sidecar"
+        - "--log.level=debug"
+        - "--tsdb.path=/data/"
+        - "--prometheus.url=http://127.0.0.1:9090"
+        - "--objstore.config-file=/etc/secret/s3.yml"
+        - "--reloader.config-file=/etc/prometheus-config/prometheus.yml"
+        - "--reloader.config-envsubst-file=/etc/prometheus-shared/prometheus.yml"
+        - "--reloader.rule-dir=/etc/prometheus-config/rules"
+        ports:
+        - name: sidecar-http
+          containerPort: 10902
+        - name: grpc
+          containerPort: 10901
+        - name: cluster
+          containerPort: 10900
+        volumeMounts:
+        - name: storage-volume
+          mountPath: /data
+        - name: thanos-storage-secret
+          mountPath: /etc/secret
+        - name: config-volume
+          mountPath: /etc/prometheus-config
+          readOnly: false
+        - name: prometheus-config-shared
+          mountPath: /etc/prometheus-shared/
+          readOnly: false
+      configPath: /etc/prometheus-shared/prometheus.yml
+      replicaCount: 1
+      persistentVolume:
+        size: 2Gi
+      extraVolumes:
+      - name: prometheus-config-shared
+        emptyDir: {}
+      extraVolumeMounts:
+      - name: prometheus-config-shared
+        mountPath: /etc/prometheus-shared/
+      global:
+        # scrape_interval: 5s
+        # scrape_timeout: 4s
+        external_labels:
+          prometheus_group: HOMELAB
+          prometheus_replica: '$(HOSTNAME)'
+        # evaluation_interval: 5s
+      extraSecretMounts:
+      - name: thanos-storage-secret
+        mountPath: /etc/secret/
+        readOnly: false
+        secretName: thanos-storage-secret
+    configmapReload:
+      image:
+        repository: gcr.io/google-containers/pause-arm64 # This image changed to just pause since there's no option to disable configmapReload container in chart, but thanos-sidecar overtakes this functionality. So basically we don't need another reloader
+        tag: 3.2
+
+    # Grafana Cloud configuration
+    # server:
+    #   remoteWrite: "{{ prometheus_remote_write | default([]) }}"
+    #   retention: "{{ prometheus_retention | default('') }}"
+    #   extraArgs:
+    #     enable-feature: agent
+    #   affinity:
+    #     nodeAffinity:
+    #       requiredDuringSchedulingIgnoredDuringExecution:
+    #         nodeSelectorTerms:
+    #           - matchExpressions:
+    #             - key: node-role.kubernetes.io/master
+    #               operator: DoesNotExist
+    # alertmanager:
+    #   enabled: false
+    # nodeExporter:
+    #   enabled: false
+    # # extraScrapeConfigs: "{{ prometheus_extra_scrape_configs | default(omit) }}"
+    # serverFiles:
+    #   prometheus.yml:
+    #     scrape_configs: "{{ prometheus_extra_scrape_configs | from_yaml }}"

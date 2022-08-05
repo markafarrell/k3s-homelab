@@ -1,0 +1,19 @@
+---
+metallb_state: present
+
+metallb_helm_chart:
+  chart_name: metallb/metallb
+  version: 0.12.1
+  repositories:
+    - name: metallb
+      repo_url: https://metallb.github.io/metallb
+  name: metallb
+  state: "{{ metallb_state }}"
+  namespace: metallb
+  values:
+    configInline:
+      address-pools:
+        - name: default
+          protocol: layer2
+          addresses:
+            - 192.168.0.96/27

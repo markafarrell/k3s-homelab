@@ -1,0 +1,18 @@
+---
+ingress_nginx_state: present
+
+ingress_nginx_load_balancer_ip: 192.168.0.98
+
+ingress_nginx_helm_chart:
+  chart_name: ingress-nginx/ingress-nginx
+  version: 4.1.4
+  repositories:
+    - name: ingress-nginx
+      repo_url: https://kubernetes.github.io/ingress-nginx
+  name: ingress-nginx
+  state: "{{ ingress_nginx_state }}"
+  namespace: ingress-nginx
+  values:
+    controller:
+      service:
+        loadBalancerIP: "{{ ingress_nginx_load_balancer_ip }}"

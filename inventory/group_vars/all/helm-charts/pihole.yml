@@ -1,0 +1,50 @@
+---
+pihole_state: present
+
+pihole_web_load_balancer_ip: 192.168.0.96
+pihole_dhcp_load_balancer_ip: 192.168.0.96
+pihole_dns_load_balancer_ip: 192.168.0.96
+
+pihole_helm_chart:
+  chart_name: mojo2600/pihole
+  version: 2.9.0
+  repositories:
+    - name: mojo2600
+      repo_url: https://mojo2600.github.io/pihole-kubernetes/
+  name: pihole
+  state: "{{ pihole_state }}"
+  namespace: pihole
+  values:
+    serviceWeb:
+      loadBalancerIP: "{{ pihole_web_load_balancer_ip }}"
+      type: LoadBalancer
+      annotations:
+        metallb.universe.tf/allow-shared-ip: pihole-svc
+
+    serviceDns:
+      loadBalancerIP: "{{ pihole_dns_load_balancer_ip }}"
+      type: LoadBalancer
+      annotations:
+        metallb.universe.tf/allow-shared-ip: pihole-svc
+
+    serviceDhcp:
+      loadBalancerIP: "{{ pihole_dhcp_load_balancer_ip }}"
+      type: LoadBalancer
+      annotations:
+        metallb.universe.tf/allow-shared-ip: pihole-svc
+
+    dnsmasq:
+      customDnsEntries:
+        - address=/gateway.lan/192.168.0.1
+        - address=/k8s-api.lan/192.168.0.64
+        - address=/pihole.lan/192.168.0.97
+        - address=/grafana.lan/192.168.0.97
+        - address=/ingress-nginx.lan/192.168.0.98
+        - address=/inverter.lan/192.168.0.243
+        - address=/kube-master-0.lan/192.168.0.201
+        - address=/kube-master-1.lan/192.168.0.202
+        - address=/kube-master-2.lan/192.168.0.203
+        - address=/dhcp-server.lan/192.168.0.254
+    extraEnvVars:
+      TZ: Australia/Hobart
+      FTLCONF_REPLY_ADDR4: "{{ pihole_web_load_balancer_ip }}"

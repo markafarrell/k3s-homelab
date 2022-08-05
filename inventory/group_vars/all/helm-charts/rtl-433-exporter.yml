@@ -14,8 +14,17 @@ rtl_433_exporter_helm_chart:
   chart_name: markafarrell/rtl-433-exporter
   repositories:
     - name: markafarrell
-      repo_url: https://markafarrell.github.io/charts/
+      repo_url: https://markafarrell.github.io/helm-charts/
   name: rtl-433-exporter
   state: "{{ rtl_433_exporter_state }}"
   namespace: "{{ rtl_433_exporter_namespace }}"
-  values: {}
+  values: # {}
+    image:
+      tag: 1.2.3
+    env:
+      MATCHERS: >
+        --id_matcher=Nexus-TH,110,Kitchen
+        --id_matcher=Nexus-TH,222,Front-Room
+        --id_matcher=Nexus-TH,238,Master-Bedroom
+        --id_matcher=Nexus-TH,36,Outside
+        --id_matcher=Nexus-TH,75,Evans-Room

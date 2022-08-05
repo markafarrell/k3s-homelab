@@ -2,10 +2,22 @@
 kubeconfig_path: "credentials/kube/config"
 
 helm_charts:
+  - "{{ metallb_helm_chart }}"
+  - "{{ pihole_helm_chart }}"
+
+  # NO LONGER USED
+  # - "{{ promtail_helm_chart }}"
+  # - "{{ speedtest_exporter_helm_chart }}"
+
+  - "{{ cert_manager_helm_chart }}"
+  - "{{ ingress_nginx_helm_chart }}"
+
   - "{{ prometheus_helm_chart }}"
-  - "{{ promtail_helm_chart }}"
-  - "{{ speedtest_exporter_helm_chart }}"
+  - "{{ thanos_helm_chart }}"
+  - "{{ grafana_helm_chart }}"
+
   - "{{ fronius_helm_chart }}"
-  # - "{{ grafana_helm_chart }}"
   - "{{ smarter_device_manager_helm_chart }}"
   - "{{ rtl_433_exporter_helm_chart }}"
+  - "{{ rtl_433_exporter_917_helm_chart }}"
+  - "{{ route53_dynamic_dns_helm_chart }}"

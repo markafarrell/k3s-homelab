@@ -5,13 +5,54 @@
     repo_url: "{{ item.repo_url }}"
   loop: "{{ helm_chart.repositories }}"
 
+- name: "Create namespace - {{ helm_chart.name }}"
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path | default(omit) }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ helm_chart.namespace }}"
+
+- name: "Create secrets - {{ helm_chart.name }}"
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path | default(omit) }}"
+    state: "{{ helm_chart.state | default('present') }}"
+    definition:
+      apiVersion: v1
+      kind: Secret
+      type: Opaque
+      metadata:
+        name: "{{ item.name }}"
+        namespace: "{{ helm_chart.namespace }}"
+      data:  "{{ item.content }}"
+  loop: "{{ helm_chart.secrets | default([]) }}"
+  no_log: true
+
+- name: "Create Pre-resources - {{ helm_chart.name }}"
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path | default(omit) }}"
+    state: "{{ helm_chart.state | default('present') }}"
+    definition: "{{ item }}"
+  loop: "{{ helm_chart.pre_resources | default([]) }}"
+
 - name: "Install chart - {{ helm_chart.name }}"
   community.kubernetes.helm:
     name: "{{ helm_chart.name }}"
+    chart_version: "{{ helm_chart.version | default(omit) }}"
     chart_ref: "{{ helm_chart.chart_name }}"
     release_namespace: "{{ helm_chart.namespace }}"
     create_namespace: true
     update_repo_cache: true
+    wait: true
     kubeconfig: "{{ kubeconfig_path | default(omit) }}"
     state: "{{ helm_chart.state | default('present') }}"
     values: "{{ helm_chart['values'] | default(omit) }}"
+
+- name: "Create Post-resources - {{ helm_chart.name }}"
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path | default(omit) }}"
+    state: "{{ helm_chart.state | default('present') }}"
+    definition: "{{ item }}"
+  loop: "{{ helm_chart.post_resources | default([]) }}"

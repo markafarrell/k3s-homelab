@@ -3,25 +3,13 @@ grafana_state: present
 
 grafana_load_balancer_ip: 192.168.0.97
 
-grafana_admin_user: !vault |
-          $ANSIBLE_VAULT;1.2;AES256;vault
-          61353133633439386132326434373665363236646231366230643732313830616233336531633637
-          6462363534346536626639386631616532306161646532620a346635323738643831346130663237
-          36336265316535393237663630366432393239653134396536633537666538353435623236363938
-          6338393438363334310a326632616163366537333265666135373130333131323839356665356236
-          3739
+grafana_admin_user: admin
 
-grafana_admin_password: !vault |
-          $ANSIBLE_VAULT;1.2;AES256;vault
-          36366535623466353835376137316363303230373530633036333562303863663965363763393962
-          3033633865343430383165666633613466343263653761640a303335313730653163373566313666
-          32326164656234393535316636666430666464393030313461626131636130643435396434643165
-          6165633164346431380a376531386663363163346337326330643764333133626238616164656635
-          39303237363339626139383965646639343732393162616236623565363061386264
+grafana_admin_password: "{{ lookup('env', 'GRAFANA_ADMIN_PASSWORD', default=undef()) }}"
 
 grafana_helm_chart:
   chart_name: grafana/grafana
-  version: 6.32.9
+  version: 6.53.0
   repositories:
     - name: grafana
       repo_url: https://grafana.github.io/helm-charts
@@ -32,7 +20,7 @@ grafana_helm_chart:
         admin-password: "{{ grafana_admin_password | b64encode }}"
   name: grafana
   state: "{{ grafana_state }}"
-  namespace: monitoring
+  namespace: grafana
   values:
     service:
       type: LoadBalancer
@@ -57,13 +45,13 @@ grafana_helm_chart:
         datasources:
           - name: Prometheus
             type: prometheus
-            url: http://prometheus-server
+            url: http://prometheus-server.monitoring.svc.cluster.local
             isDefault: false
             uid: prometheus
             editable: false
           - name: Thanos
             type: prometheus
-            url: http://thanos-query:9090
+            url: http://thanos-query.monitoring.svc.cluster.local:9090
             isDefault: true
             uid: thanos
             editable: false

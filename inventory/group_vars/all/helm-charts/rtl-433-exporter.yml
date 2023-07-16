@@ -26,5 +26,5 @@ rtl_433_exporter_helm_chart:
         --id_matcher=Nexus-TH,110,Lucas-Room
         --id_matcher=Nexus-TH,222,Front-Room
         --id_matcher=Nexus-TH,238,Master-Bedroom
-        --id_matcher=Nexus-TH,36,Outside
+        --id_matcher=Nexus-TH,36,Kitchen
         --id_matcher=Nexus-TH,75,Evans-Room

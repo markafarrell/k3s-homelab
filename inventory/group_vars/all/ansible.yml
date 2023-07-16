@@ -1,0 +1,2 @@
+---
+ansible_private_key_file: credentials/ssh/id_ed25519

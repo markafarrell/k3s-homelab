@@ -1,4 +1,4 @@
 #! /bin/bash
 
 # Pull the kubeconfig key
-lpass show --notes homelab/homelab-kubeconfig > config
+vlt secrets get --plaintext kubeconfig_b64 | base64 --decode > config

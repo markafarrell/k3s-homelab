@@ -1,6 +1,6 @@
 ---
 - name: Add chart repo
-  community.kubernetes.helm_repository:
+  kubernetes.core.helm_repository:
     name: "{{ item.name }}"
     repo_url: "{{ item.repo_url }}"
   loop: "{{ helm_chart.repositories }}"
@@ -38,7 +38,7 @@
   loop: "{{ helm_chart.pre_resources | default([]) }}"
 
 - name: "Install chart - {{ helm_chart.name }}"
-  community.kubernetes.helm:
+  kubernetes.core.helm:
     name: "{{ helm_chart.name }}"
     chart_version: "{{ helm_chart.version | default(omit) }}"
     chart_ref: "{{ helm_chart.chart_name }}"

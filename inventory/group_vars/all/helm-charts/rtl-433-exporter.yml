@@ -28,3 +28,5 @@ rtl_433_exporter_helm_chart:
         --id_matcher=Nexus-TH,238,Master-Bedroom
         --id_matcher=Nexus-TH,36,Kitchen
         --id_matcher=Nexus-TH,75,Evans-Room
+    nodeSelector:
+      kubernetes.io/hostname: kube-worker-1

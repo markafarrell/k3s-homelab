@@ -24,3 +24,5 @@ rtl_433_exporter_917_helm_chart:
     env:
       FREQUENCY: 917M
       MATCHERS: --id_matcher=Holman-WS5029,31289,WeatherStation
+    nodeSelector:
+      kubernetes.io/hostname: kube-master-0

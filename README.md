@@ -33,7 +33,7 @@ xz -d -v 2023-05-03-raspios-bullseye-arm64-lite.img.xz
 4. Customise image
 
 ```
-echo exit | sudo /usr/local/sdm/sdm --customize 2023-05-03-raspios-bullseye-arm64-lite.img --nowpa --disable bluetooth --disable piwiz --disable swap --disable triggerhappy --disable wifi --svc-disable userconfig --svc-enable 'getty@tty1' --L10n --password-pi raspberry --restart
+echo exit | sudo /usr/local/sdm/sdm --customize 2023-05-03-raspios-bullseye-arm64-lite.img --nowpa --disable bluetooth,piwiz,swap,triggerhappy,wifi --L10n --password-pi raspberry --restart
 ```
 
 5. Burn image
@@ -71,10 +71,10 @@ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 ```
 cd credentials/ssh
 vlt secrets get --plaintext id_ed25519_b64 | base64 --decode > id_ed25519
-```    b
+```
 
 ### Configuring the k3s cluster
 
 1. Run ansible playbook
 
-`vlt run -c "ansible-playbook helm.yml"`
+`vlt run -c "ansible-playbook k3s.yml"`

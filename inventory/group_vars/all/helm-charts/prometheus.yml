@@ -12,16 +12,16 @@ prometheus_extra_scrape_configs:
 
 prometheus_load_balancer_ip: 192.168.0.66
 
-prometheus_thanos_s3_access_key: "{{ lookup('env', 'PROMETHEUS_THANOS_S3_ACCESS_KEY', default=undef()) }}"
-prometheus_thanos_s3_secret_key: "{{ lookup('env', 'PROMETHEUS_THANOS_S3_SECRET_KEY', default=undef()) }}"
+thanos_s3_access_key: "{{ lookup('env', 'THANOS_S3_ACCESS_KEY', default=undef()) }}"
+thanos_s3_secret_key: "{{ lookup('env', 'THANOS_S3_SECRET_KEY', default=undef()) }}" 
 
-prometheus_thanos_s3_config:
+thanos_s3_config:
   type: s3
   config:
     bucket: homelab-thanos-data #S3 bucket name
     endpoint: s3.ap-southeast-2.amazonaws.com #S3 Regional endpoint
-    access_key: "{{ prometheus_thanos_s3_access_key }}"
-    secret_key: "{{ prometheus_thanos_s3_secret_key }}"
+    access_key: "{{ thanos_s3_access_key }}"
+    secret_key: "{{ thanos_s3_secret_key }}"
 
 prometheus_helm_chart:
   chart_name: prometheus-community/prometheus
@@ -34,7 +34,7 @@ prometheus_helm_chart:
   secrets:
     - name: thanos-storage-secret
       content:
-        s3.yml: "{{ prometheus_thanos_s3_config | to_nice_yaml | b64encode }}"
+        s3.yml: "{{ thanos_s3_config | to_nice_yaml | b64encode }}"
   name: prometheus
   state: "{{ prometheus_state }}"
   namespace: monitoring

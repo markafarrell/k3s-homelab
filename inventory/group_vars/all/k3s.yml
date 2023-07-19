@@ -20,5 +20,5 @@ k3s_server:
     - traefik
     - servicelb
   # disable-cloud-controller: true
-  node-taint:
-    - "node-role.kubernetes.io/master:NoSchedule"
+  # node-taint:
+  #   - "node-role.kubernetes.io/master:NoSchedule"

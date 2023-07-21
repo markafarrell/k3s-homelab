@@ -1,0 +1,9 @@
+---
+- hosts: all
+  connection: local
+  tasks:
+    - debug:
+        var: route53_dynamic_dns_helm_chart
+
+    - debug:
+        var: route53_dynamic_dns_aws_access_key

@@ -3,7 +3,7 @@
 ## System Dependancies
 
  * python3
- * lastpass-cli (https://github.com/lastpass/lastpass-cli)
+ * vlt (https://developer.hashicorp.com/vault/tutorials/hcp-vault-secrets-get-started/hcp-vault-secrets-install-cli)
 
 ## Python Dependancies
 
@@ -47,7 +47,16 @@ sudo /usr/local/sdm/sdm --burn /dev/mmcblk0 --hostname <hostname> 2023-05-03-ras
 
 1. Install system dependancies
 
-`apt-install python3 python3-pip lastpass-cli`
+```
+sudo apt update
+
+curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+
+sudo apt update
+sudo apt install python3 python3-pip vlt
+```
 
 2. Install python depancies
 
@@ -70,7 +79,7 @@ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
 ```
 cd credentials/ssh
-vlt secrets get --plaintext id_ed25519_b64 | base64 --decode > id_ed25519
+./pull-ssh-key.sh
 ```
 
 ### Configuring the k3s cluster

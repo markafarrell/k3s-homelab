@@ -12,7 +12,7 @@
 
 ## Creating Image
 
-1. Install `sdm` 
+1. Install `sdm`
 
 `curl -L https://raw.githubusercontent.com/gitbls/sdm/master/EZsdmInstaller | bash`
 
@@ -82,8 +82,26 @@ cd credentials/ssh
 ./pull-ssh-key.sh
 ```
 
+### Get Kubeconfig
+
+```
+cd credentials/kube
+./pull-kubeconfig.sh
+```
+
+### Configure kubectl
+
+```
+source .env
+kubectl get nodes
+```
+
 ### Configuring the k3s cluster
 
-1. Run ansible playbook
+1. Configure base os
+
+`vlt run -c "ansible-playbook base.yml"`
+
+2. Install and configure k3s
 
 `vlt run -c "ansible-playbook k3s.yml"`

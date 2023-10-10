@@ -105,3 +105,7 @@ kubectl get nodes
 2. Install and configure k3s
 
 `vlt run -c "ansible-playbook k3s.yml"`
+
+3. Install helm charts
+
+`vlt run -c "ansible-playbook helm.yml"`
